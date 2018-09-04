@@ -10,6 +10,9 @@ var ctx;
 var w;
 var h;
 var color = 'gray';
+var starsArray = [];
+var numStars;
+var testStar;
 
 window.onload = init();
 
@@ -19,8 +22,18 @@ function init(){
 
     //make canvas resizable
     window.addEventListener('resize', resizeWin, false);
+    window.addEventListener('mouseMove', getMousePos);
 
     resizeWin();
+
+    numStars = 20;
+    starsArray = makeStars(numStars, starsArray);
+
+    let x = randNum(w);
+    let y = randNum(h);
+    let d = randNum(5);
+    let colar = randColor();
+    testStar = new Star(x,y,d, colar);
 
     //start animation loop
     update();
@@ -30,29 +43,114 @@ function update(){
     //recursive updating
     requestAnimationFrame(update);
 
-    draw();
+    moveStars(starsArray);
+    testStar.moveStar();
+   
+    //draw background or don't depending on effect;
+    ctx.fillStyle = randBlue();
+    ctx.fillRect(0,0, w, h);
+
+    drawStars(starsArray);
+    testStar.drawStar();
+
+    drawLines(starsArray);
 }
 
 function draw(){
 
-    //draw background or don't depending on effect;
-
-    let r = Math.floor(Math.random() * 256);
-    let g = Math.floor(Math.random() * 256);
-    let b = Math.floor(Math.random() * 256);
-
-    var col = "rgb(" + r + ", " + g + ", " + b + ")";
+    //Tests to ensure update is working
+    /*
     var col1 = randColor();
-
-    console.log(col1);
-
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, 150, 150);
-
     ctx.fillStyle = col1;
-    ctx.fillRect(randPosition(w), randPosition(h), 70, 70);
+    ctx.fillRect(randNum(w), randNum(h), 70, 70);
     console.log(ctx.fillStyle);
+    */
+
 }
+
+/////////////EXPERIMENTAL FUNCTIONS/////////////
+function drawLines(array){
+    let mouse = getMousePos();
+
+    for(var i=0; i<numStars; i++){
+        //finding distance using pythagorean theorem
+        //https://stackoverflow.com/questions/20916953/get-distance-between-two-points-in-canvas
+        let a = mouse.x - array[i].posx;
+        let b = mouse.y - array[i].posy;
+
+        let c = Math.sqrt (a*a + b*b);
+        if(c < 30){
+            ctx.beginPath();
+            ctx.moveTo(mouse.x, mouse.y);
+            ctx.lineTo(array[i].posx, array[i].posy);
+            ctx.stroke();
+            ctx.closePath;
+        }
+    }
+}
+
+
+/////////////STAR ARRAY BATCH OPERATIONS/////////////
+
+//allStars()
+//create all stars
+function makeStars(numStars, array){
+
+    for(var i=0; i<numStars; i++){
+        let x = randNum(w);
+        let y = randNum(h);
+        let d = randNum(5);
+        let color = randColor()
+        var newStar = new Star(x,y,d, color);
+        array[i] = newStar;
+    }
+
+    return array;
+    console.log(array);
+}
+
+//moveStars()
+//moves all stars
+function moveStars(array){
+    for(var i=0; i<numStars; i++){
+        array[i].moveStar();
+    }
+}
+
+function drawStars(array){
+    for(var i=0; i<numStars; i++){
+        array[i].drawStar();
+    }
+}
+
+//makeStar()
+//create star object and related functions
+function Star (x,y,d, col)  {
+    this.posx = x;
+    this.posy = y;
+    this.drop = d;
+    this.radius = randNum(Math.floor(randNum(7)));
+    this.drawStar = function(){
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.arc(this.posx, this.posy, this.radius, 0, 2*Math.PI, false);
+        ctx.closePath;
+        ctx.fill();
+    };
+    this.moveStar = function(){
+        this.posy += this.drop;
+        if(this.posy > canvas.height){
+            console.log("left the screen");
+            this.posx = randNum(w);
+            this.posy = 0;
+        }
+    };
+};
+
+
+/////////////HELPER FUNCTIONS/////////////
 
 //resize helper function
 //based on updateForResize by Steven Yi
@@ -74,6 +172,7 @@ function resizeWin(){
     draw();
 }
 
+//random color helper function
 function randColor(){
     let r = Math.floor(Math.random() * 255);
     let g = Math.floor(Math.random() * 255);
@@ -84,8 +183,31 @@ function randColor(){
     return col;
 }
 
-function randPosition(d){
+//random  blue color creator
+function randBlue(){
+    let r = Math.floor(Math.random() * 10);
+    let g = Math.floor(Math.random() * 10);
+    let b = Math.floor(Math.random() * 30);
+    let a = .5;
+
+    var col= "rgba(" + r + "," + g + "," + b + "," + a + ")";
+    return col;
+}
+
+//finds a random position inside a given value
+function randNum(d){
     let p = Math.random() * d;
 
     return p;
+}
+
+//get mouse position
+//https://www.html5canvastutorials.com/advanced/html5-canvas-mouse-coordinates/
+//https://stackoverflow.com/questions/1114465/getting-mouse-location-in-canvas
+//https://stackoverflow.com/questions/1114465/getting-mouse-location-in-canvas
+function getMousePos(event){
+    var mousePos = {};
+    mousePos.x = event.clientX - (canvas.offsetLeft - window.pageXOffset);
+    mousePos.y = event.clientY - (canvas.offsetTop - window.pageYOffset);
+    return mousePos;
 }
