@@ -13,6 +13,7 @@ var color = 'gray';
 var starsArray = [];
 var numStars;
 var testStar;
+var testLight;
 
 window.onload = init();
 
@@ -22,11 +23,12 @@ function init(){
 
     //make canvas resizable
     window.addEventListener('resize', resizeWin, false);
-    window.addEventListener('mouseMove', getMousePos);
+    //window.addEventListener('mouseMove', getMousePos);
+    //window.setInterval()
 
     resizeWin();
 
-    numStars = 20;
+    numStars = 150;
     starsArray = makeStars(numStars, starsArray);
 
     let x = randNum(w);
@@ -34,6 +36,8 @@ function init(){
     let d = randNum(5);
     let colar = randColor();
     testStar = new Star(x,y,d, colar);
+
+    testLight = new Lighting(randBetween(0,w),randBetween(-30,0));
 
     //start animation loop
     update();
@@ -50,10 +54,14 @@ function update(){
     ctx.fillStyle = randBlue();
     ctx.fillRect(0,0, w, h);
 
+    testLight.strike(10);
+
     drawStars(starsArray);
     testStar.drawStar();
 
-    drawLines(starsArray);
+    testLight.strike(10);
+
+    //drawLines(starsArray);
 }
 
 function draw(){
@@ -72,7 +80,6 @@ function draw(){
 
 /////////////EXPERIMENTAL FUNCTIONS/////////////
 function drawLines(array){
-    let mouse = getMousePos();
 
     for(var i=0; i<numStars; i++){
         //finding distance using pythagorean theorem
@@ -142,12 +149,41 @@ function Star (x,y,d, col)  {
     this.moveStar = function(){
         this.posy += this.drop;
         if(this.posy > canvas.height){
-            console.log("left the screen");
+            //console.log("left the screen");
             this.posx = randNum(w);
             this.posy = 0;
         }
     };
 };
+
+function Lighting(x,y) {
+    this.startX = x;
+    this.startY = y;
+    this.moveX;
+    this.moveY;
+    this.pX;
+    this.pY;
+    this.strike = function(l){
+        this.pX = this.startX;
+        this.pY = this.startY; 
+        ctx.beginPath(); 
+        for(var i=0; i<l; i++){
+            this.moveX = randBetween(-45,45);
+            this.moveY = randBetween(90,7);
+            ctx.lineWidth = randBetween(1,7);
+            ctx.strokeStyle = 'rgba(255,255,255,.1)';
+           
+            ctx.moveTo(this.pX,this.pY);
+            ctx.lineTo(this.pX + this.moveX, this.pY + this.moveY);
+            
+            this.pX = this.pX + this.moveX;
+            this.pY = this.pY + this.moveY;
+            //console.log("starting x: " + this.pX);
+            //console.log("starting y: " + this.pY);
+        }
+        ctx.stroke();
+    };
+}
 
 
 /////////////HELPER FUNCTIONS/////////////
@@ -188,7 +224,7 @@ function randBlue(){
     let r = Math.floor(Math.random() * 10);
     let g = Math.floor(Math.random() * 10);
     let b = Math.floor(Math.random() * 30);
-    let a = .5;
+    let a = .2;
 
     var col= "rgba(" + r + "," + g + "," + b + "," + a + ")";
     return col;
@@ -199,6 +235,14 @@ function randNum(d){
     let p = Math.random() * d;
 
     return p;
+}
+
+//find random number between two values
+//https://stackoverflow.com/questions/4959975/generate-random-number-between-two-numbers-in-javascript
+function randBetween(max, min){
+    var n = Math.floor(Math.random() * (max - min + 1)) + min;
+
+    return n;
 }
 
 //get mouse position
