@@ -2,6 +2,22 @@
 //by Zoe Kniskern
 //IGME 790
 
+//Project: Falling Stars That Became Rain
+//
+//Initially I was building a star field and was interested in simulating parallax movement but ended up liking the consistency of mainly vertical movement.
+//I built the individual class for Star and then created functions to handle batch operations of their movement and drawing
+//
+//MAPPING RANDOM
+//Used in both Lightning and Star as their positions and movement directions are based on randomly generated numbers.
+//INTERROGATE RANDOM
+//Used to decide if the raindrop is squiggly or straight falling
+//RANDOM SELECTION
+//Used when selecting the color of the raindrops
+//WEIGHTED RANDOM
+//Used when generating blues in the randBlue() function
+//RANDOM WALK
+//Used to create the lightning strikes
+
 'use strict'
 
 //globals
@@ -12,7 +28,6 @@ var h;
 var color = 'gray';
 var starsArray = [];
 var numStars;
-var testStar;
 var testLight;
 
 window.onload = init();
@@ -23,20 +38,16 @@ function init(){
 
     //make canvas resizable
     window.addEventListener('resize', resizeWin, false);
-    //window.addEventListener('mouseMove', getMousePos);
-    //window.setInterval()
 
+    //draw initial background
     resizeWin();
 
+    //set number of stars elements
     numStars = 150;
+    //make the stars
     starsArray = makeStars(numStars, starsArray);
 
-    let x = randNum(w);
-    let y = randNum(h);
-    let d = randNum(5);
-    let colar = randColor();
-    testStar = new Star(x,y,d, colar);
-
+    //create lightning object
     testLight = new Lighting(randBetween(0,w),randBetween(-30,0));
 
     //start animation loop
@@ -47,55 +58,19 @@ function update(){
     //recursive updating
     requestAnimationFrame(update);
 
+    //move stars on update
     moveStars(starsArray);
-    testStar.moveStar();
    
-    //draw background or don't depending on effect;
+    //draw background
     ctx.fillStyle = randBlue();
     ctx.fillRect(0,0, w, h);
 
-    testLight.strike(10);
-
+    //draw stars
     drawStars(starsArray);
-    testStar.drawStar();
 
-    testLight.strike(10);
+    //set interval of strike
+    setInterval(testLight.strike(10), 30000);
 
-    //drawLines(starsArray);
-}
-
-function draw(){
-
-    //Tests to ensure update is working
-    /*
-    var col1 = randColor();
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, 150, 150);
-    ctx.fillStyle = col1;
-    ctx.fillRect(randNum(w), randNum(h), 70, 70);
-    console.log(ctx.fillStyle);
-    */
-
-}
-
-/////////////EXPERIMENTAL FUNCTIONS/////////////
-function drawLines(array){
-
-    for(var i=0; i<numStars; i++){
-        //finding distance using pythagorean theorem
-        //https://stackoverflow.com/questions/20916953/get-distance-between-two-points-in-canvas
-        let a = mouse.x - array[i].posx;
-        let b = mouse.y - array[i].posy;
-
-        let c = Math.sqrt (a*a + b*b);
-        if(c < 30){
-            ctx.beginPath();
-            ctx.moveTo(mouse.x, mouse.y);
-            ctx.lineTo(array[i].posx, array[i].posy);
-            ctx.stroke();
-            ctx.closePath;
-        }
-    }
 }
 
 
@@ -105,11 +80,13 @@ function drawLines(array){
 //create all stars
 function makeStars(numStars, array){
 
+    let colors = ['173,216,230', '0,191,255', '70,130,180', '0,0,128' ];
+
     for(var i=0; i<numStars; i++){
         let x = randNum(w);
         let y = randNum(h);
-        let d = randNum(5);
-        let color = randColor()
+        let d = randBetween(.5,6);
+        let color = colors[Math.floor(Math.random()*colors.length)]; //RANDOM SELECTION
         var newStar = new Star(x,y,d, color);
         array[i] = newStar;
     }
@@ -132,15 +109,18 @@ function drawStars(array){
     }
 }
 
-//makeStar()
+//////////////////Object Classes/////////////////
+
 //create star object and related functions
 function Star (x,y,d, col)  {
     this.posx = x;
     this.posy = y;
     this.drop = d;
+    this.a = Math.random();
+    this.slant;
     this.radius = randNum(Math.floor(randNum(7)));
-    this.drawStar = function(){
-        ctx.fillStyle = col;
+    this.drawStar = function(){ //MAPPING RANDOM
+        ctx.fillStyle = 'rgba(' + col + ',' + this.a + ')';
         ctx.beginPath();
         ctx.arc(this.posx, this.posy, this.radius, 0, 2*Math.PI, false);
         ctx.closePath;
@@ -148,6 +128,10 @@ function Star (x,y,d, col)  {
     };
     this.moveStar = function(){
         this.posy += this.drop;
+        if(this.drop > 3){ //INTERROGATE RANDOM
+            this.slant = randBetween(-5,5);
+            this.posx += this.slant;
+        }
         if(this.posy > canvas.height){
             //console.log("left the screen");
             this.posx = randNum(w);
@@ -157,15 +141,16 @@ function Star (x,y,d, col)  {
 };
 
 function Lighting(x,y) {
-    this.startX = x;
-    this.startY = y;
+    //this.startX = x;
+    //this.startY = y;
     this.moveX;
     this.moveY;
     this.pX;
     this.pY;
     this.strike = function(l){
-        this.pX = this.startX;
-        this.pY = this.startY; 
+        //console.log("strike ran");
+        this.pX = randBetween(0,w); //this.startX;
+        this.pY = randBetween(-30,0); //this.startY; 
         ctx.beginPath(); 
         for(var i=0; i<l; i++){
             this.moveX = randBetween(-45,45);
@@ -174,7 +159,7 @@ function Lighting(x,y) {
             ctx.strokeStyle = 'rgba(255,255,255,.1)';
            
             ctx.moveTo(this.pX,this.pY);
-            ctx.lineTo(this.pX + this.moveX, this.pY + this.moveY);
+            ctx.lineTo(this.pX + this.moveX, this.pY + this.moveY); //RANDOM WALK
             
             this.pX = this.pX + this.moveX;
             this.pY = this.pY + this.moveY;
@@ -204,12 +189,10 @@ function resizeWin(){
 
     ctx.fillStyle = color;
     ctx.fillRect(0,0, w, h);
-
-    draw();
 }
 
 //random color helper function
-function randColor(){
+function randColor(){ //WEIGHTED RANDOM
     let r = Math.floor(Math.random() * 255);
     let g = Math.floor(Math.random() * 255);
     let b = Math.floor(Math.random() * 255);
@@ -219,7 +202,7 @@ function randColor(){
     return col;
 }
 
-//random  blue color creator
+//random blue color creator
 function randBlue(){
     let r = Math.floor(Math.random() * 10);
     let g = Math.floor(Math.random() * 10);
@@ -230,10 +213,9 @@ function randBlue(){
     return col;
 }
 
-//finds a random position inside a given value
+//finds a random num below a given value
 function randNum(d){
     let p = Math.random() * d;
-
     return p;
 }
 
@@ -243,15 +225,4 @@ function randBetween(max, min){
     var n = Math.floor(Math.random() * (max - min + 1)) + min;
 
     return n;
-}
-
-//get mouse position
-//https://www.html5canvastutorials.com/advanced/html5-canvas-mouse-coordinates/
-//https://stackoverflow.com/questions/1114465/getting-mouse-location-in-canvas
-//https://stackoverflow.com/questions/1114465/getting-mouse-location-in-canvas
-function getMousePos(event){
-    var mousePos = {};
-    mousePos.x = event.clientX - (canvas.offsetLeft - window.pageXOffset);
-    mousePos.y = event.clientY - (canvas.offsetTop - window.pageYOffset);
-    return mousePos;
 }
